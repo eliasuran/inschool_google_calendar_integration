@@ -24,8 +24,8 @@ class GoogleCalendar():
     def init(self):
         if self.creds is None:
             self._auth()
-        self._setup_and_read_config()
         self.service = build("calendar", "v3", credentials=self.creds)
+        self._setup_and_read_config()
 
 
     def _setup_and_read_config(self):
@@ -36,9 +36,7 @@ class GoogleCalendar():
         else:
             self.calendar_id = self._create_calendar()
             with open(self.config_path, "w") as file:
-                json.dump({
-                    "calendar_id": self.calendar_id
-                }, file)
+                json.dump({"calendar_id": self.calendar_id}, file)
 
     def _auth(self):
         if os.path.exists(self.token_path):
@@ -60,10 +58,7 @@ class GoogleCalendar():
             "summary": "Timeplan",
             "description": "Kalender for timeplan"
         }).execute()
-
         calendar_id = created_calendar["id"]
-
-        print("Calendar created:", calendar_id)
         return calendar_id
 
     def _create_event(self):

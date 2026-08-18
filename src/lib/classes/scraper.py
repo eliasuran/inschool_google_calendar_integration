@@ -11,7 +11,7 @@ class Scraper():
         self.school_id = app.school_id
         self.url = f"https://{self.school_id}.inschool.visma.no/#/app/dashboard"
         self.token_cache_path = "inschool_tokens_cache.json"
-        self.token_expiry_seconds = 3600
+        self.token_expiry_seconds = 3600 * 2
 
     def get_auth_jwt_cookie_str(self):
         with sync_playwright() as p:

@@ -22,6 +22,5 @@ class App():
                 print("Logger inn..")
                 self.auth_jwt = self.scraper.get_auth_jwt_cookie_str()
             self.google_calendar.init()
-            self.google_calendar.create_event()
         except Exception as e:
             raise e
