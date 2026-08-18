@@ -10,7 +10,7 @@ class Scraper():
         self.app = app
         self.school_id = app.school_id
         self.url = f"https://{self.school_id}.inschool.visma.no/#/app/dashboard"
-        self.token_cache_path = "src/tokens_cache.json"
+        self.token_cache_path = "inschool_tokens_cache.json"
         self.token_expiry_seconds = 3600
 
     def get_auth_jwt_cookie_str(self):
@@ -45,10 +45,9 @@ class Scraper():
         with open(self.token_cache_path, "r", encoding="utf-8") as file:
             content = file.read()
             if "{" not in content:
-                 return None
+                 return None #}
             data = json.loads(content)
             if data.get("expires",0) > time.time():
-                print("using cached token")
                 return data.get("token")
             return None
 
