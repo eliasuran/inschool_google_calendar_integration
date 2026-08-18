@@ -6,3 +6,5 @@ google_oauth_client_credentials.json
 token.json
 inschool_tokens_cache.json
 google_oauth_token.json
+.env
+config.json

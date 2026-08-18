@@ -1,4 +1,5 @@
 from lib.classes.credentials import Credentials
+from lib.classes.google_calendar import GoogleCalendar
 from lib.classes.scraper import Scraper
 
 
@@ -10,6 +11,7 @@ class App():
         self.auth_jwt: str | None = "NOT_SET"
         self.scraper = Scraper(self)
         self.credentials = Credentials(self)
+        self.google_calendar = GoogleCalendar(self)
 
 
     def run(self):
@@ -17,7 +19,9 @@ class App():
             self.auth_jwt = self.scraper.check_and_get_token_from_cache()
             if self.auth_jwt is None:
                 self.username, self.password = self.credentials.get_credentials()
+                print("Logger inn..")
                 self.auth_jwt = self.scraper.get_auth_jwt_cookie_str()
-            print("auth jwt:",self.auth_jwt)
+            self.google_calendar.init()
+            self.google_calendar.create_event()
         except Exception as e:
             raise e
