@@ -1,4 +1,5 @@
 from lib.classes.credentials import Credentials
+from lib.classes.fetcher import Fetcher
 from lib.classes.google_calendar import GoogleCalendar
 from lib.classes.scraper import Scraper
 
@@ -12,6 +13,7 @@ class App():
         self.scraper = Scraper(self)
         self.credentials = Credentials(self)
         self.google_calendar = GoogleCalendar(self)
+        self.fetcher = Fetcher(self)
 
 
     def run(self):
@@ -22,5 +24,7 @@ class App():
                 print("Logger inn..")
                 self.auth_jwt = self.scraper.get_auth_jwt_cookie_str()
             self.google_calendar.init()
+            timeplan = self.fetcher.get_timeplan_next_4_weeks()
+            print(timeplan)
         except Exception as e:
             raise e

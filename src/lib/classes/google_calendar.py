@@ -61,36 +61,24 @@ class GoogleCalendar():
         calendar_id = created_calendar["id"]
         return calendar_id
 
-    def _create_event(self):
+
+    def _create_event(self, title, location, teacher, date, start_time, end_time):
         if self.service is None:
             raise Exception(self.service)
+        #date format = 2025-05-28
         event = {
-          'summary': 'Google I/O 2015',
-          'location': '800 Howard St., San Francisco, CA 94103',
-          'description': 'A chance to hear more about Google\'s developer products.',
-          'start': {
-            'dateTime': '2015-05-28T09:00:00-07:00',
-            'timeZone': 'America/Los_Angeles',
-          },
-          'end': {
-            'dateTime': '2015-05-28T17:00:00-07:00',
-            'timeZone': 'America/Los_Angeles',
-          },
-          'recurrence': [
-            'RRULE:FREQ=DAILY;COUNT=2'
-          ],
-          'attendees': [
-            {'email': 'lpage@example.com'},
-            {'email': 'sbrin@example.com'},
-          ],
-          'reminders': {
-            'useDefault': False,
-            'overrides': [
-              {'method': 'email', 'minutes': 24 * 60},
-              {'method': 'popup', 'minutes': 10},
-            ],
-          },
+              'summary': {title},
+              'location': {location},
+              'description': f'{title} time med {teacher}. I rom {location} kl {start_time}.',
+              'start': {
+                    'dateTime': f'{date}T{start_time}',
+                    'timeZone': 'Norway/Oslo'
+              },
+              'end': {
+                    'dateTime': f'{date}T{end_time}',
+                    'timeZone': 'Norway/Oslo'
+              }
         }
 
-        event = self.service.events().insert(calendarId='primary', body=event).execute()
+        event = self.service.events().insert(calendarId=self.calendar_id, body=event).execute()
         print("event created:",event.get("htmlLink"))
