@@ -70,7 +70,7 @@ class GoogleCalendar():
         return {
             "summary": title,
             "location": location,
-            "description": f"{title}.{f' Lærer: {teacher}.' if teacher is not None else ' '}I rom {location} kl {start_time}.",
+            "description": f"{title}.{f' Lærer: {teacher}. ' if teacher is not None else ' '}I rom {location} kl {start_time}.",
             "start": {
                 "dateTime": f"{date}T{start_time}:00",
                 "timeZone": "Europe/Oslo"
