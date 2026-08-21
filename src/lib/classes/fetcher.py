@@ -18,7 +18,6 @@ class Fetcher():
             "Authorization": f"Bearer {self.app.auth_jwt}"
         }
         res = requests.get(url,headers=headers)
-        print(res.text)
         return res.json()
 
 
@@ -27,11 +26,18 @@ class Fetcher():
         return data.get("timetableItems",[])
 
 
-    def get_timeplan_next_4_weeks(self):
+    def get_timeplan_next_x_weeks(self, weeks):
         timeplan_items = []
         now = datetime.datetime.now()
-        for i in range(4):
+        start_date = None
+        end_date = None
+        for i in range(weeks):
             for_week_date = (now + datetime.timedelta(days=7*i)).strftime("%d/%m/%Y")
+            for_week_date_date = datetime.datetime.strptime(for_week_date, "%d/%m/%Y").date()
+            if i == 0:
+                start_date = for_week_date_date
+            elif i == weeks - 1:
+                end_date = for_week_date_date
             items = self._get_timeplan(for_week_date)
-            timeplan_items.append(items)
-        return timeplan_items
+            timeplan_items.extend(items)
+        return timeplan_items, start_date, end_date

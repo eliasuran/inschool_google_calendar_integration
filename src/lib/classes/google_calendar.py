@@ -1,4 +1,5 @@
 import datetime
+from zoneinfo import ZoneInfo
 import json
 import os.path
 from google.auth.transport.requests import Request
@@ -21,6 +22,7 @@ class GoogleCalendar():
         self.config_path = "config.json"
         self.calendar_id = None
 
+
     def init(self):
         if self.creds is None:
             self._auth()
@@ -37,6 +39,7 @@ class GoogleCalendar():
             self.calendar_id = self._create_calendar()
             with open(self.config_path, "w") as file:
                 json.dump({"calendar_id": self.calendar_id}, file)
+
 
     def _auth(self):
         if os.path.exists(self.token_path):
@@ -62,23 +65,123 @@ class GoogleCalendar():
         return calendar_id
 
 
-    def _create_event(self, title, location, teacher, date, start_time, end_time):
-        if self.service is None:
-            raise Exception(self.service)
-        #date format = 2025-05-28
-        event = {
-              'summary': {title},
-              'location': {location},
-              'description': f'{title} time med {teacher}. I rom {location} kl {start_time}.',
-              'start': {
-                    'dateTime': f'{date}T{start_time}',
-                    'timeZone': 'Norway/Oslo'
-              },
-              'end': {
-                    'dateTime': f'{date}T{end_time}',
-                    'timeZone': 'Norway/Oslo'
-              }
+    def _build_event(self, title, location, teacher, date, start_time, end_time):
+        date = datetime.datetime.strptime(date, "%d/%m/%Y").strftime("%Y-%m-%d")
+        return {
+            "summary": title,
+            "location": location,
+            "description": f"{title}.{f' Lærer: {teacher}.' if teacher is not None else ' '}I rom {location} kl {start_time}.",
+            "start": {
+                "dateTime": f"{date}T{start_time}:00",
+                "timeZone": "Europe/Oslo"
+            },
+            "end": {
+                "dateTime": f"{date}T{end_time}:00",
+                "timeZone": "Europe/Oslo"
+            },
+            "attendees": [],
+            "reminders": {
+                "useDefault": True,
+            }
         }
 
-        event = self.service.events().insert(calendarId=self.calendar_id, body=event).execute()
-        print("event created:",event.get("htmlLink"))
+
+    def _create_events(self, timeplan_items):
+        if self.service is None:
+            raise Exception(self.service)
+        events = []
+        for item in timeplan_items:
+            title = item["subject"]
+            if title is None:
+                title = item.get("label")
+
+            room = item["mainRoom"]
+            if room is None and len(item["locations"]) > 0:
+                room = item["locations"][0]
+
+            event = self._build_event(
+                title,
+                room,
+                item["teacherName"],
+                item["date"],
+                item["startTime"],
+                item["endTime"],
+            )
+
+            events.append(event)
+
+        for i in range(0, len(events), 1000):
+            batch = self.service.new_batch_http_request()
+            for event in events[i:i + 1000]:
+                batch.add(
+                    self.service.events().insert(
+                        calendarId=self.calendar_id,
+                        body=event,
+                    )
+                )
+            batch.execute()
+
+        return len(events)
+
+
+    def _delete_events(self, start_date, end_date):
+        tz = ZoneInfo("Europe/Oslo")
+        if self.service is None:
+            raise Exception(self.service)
+        start_date = start_date - datetime.timedelta(days=start_date.weekday())
+        end_date = end_date + datetime.timedelta(days=7 - end_date.weekday())
+
+        time_min = datetime.datetime.combine(
+            start_date,
+            datetime.time.min,
+            tzinfo=tz,
+        ).isoformat()
+        time_max = datetime.datetime.combine(
+            end_date,
+            datetime.time.min,
+            tzinfo=tz,
+        ).isoformat()
+
+        event_ids = []
+        page_token = None
+
+        while True:
+            response = self.service.events().list(
+                calendarId=self.calendar_id,
+                timeMin=time_min,
+                timeMax=time_max,
+                singleEvents=True,
+                pageToken=page_token,
+            ).execute()
+
+            event_ids.extend(
+                event["id"]
+                for event in response.get("items", [])
+            )
+
+            page_token = response.get("nextPageToken")
+
+            if not page_token:
+                break
+
+        for i in range(0, len(event_ids), 1000):
+            batch = self.service.new_batch_http_request()
+
+            for event_id in event_ids[i:i + 1000]:
+                batch.add(
+                    self.service.events().delete(
+                        calendarId=self.calendar_id,
+                        eventId=event_id,
+                    )
+                )
+
+            batch.execute()
+
+        return len(event_ids)
+
+
+    def create_timeplan_events(self, timeplan_items, start_date, end_date):
+        print("Sletter gamle timer..")
+        self._delete_events(start_date, end_date)
+        print("Legger til nye timer..")
+        self._create_events(timeplan_items)

@@ -18,13 +18,14 @@ class App():
 
     def run(self):
         try:
+            print("Logger inn..")
             self.auth_jwt = self.scraper.check_and_get_token_from_cache()
             if self.auth_jwt is None:
                 self.username, self.password = self.credentials.get_credentials()
-                print("Logger inn..")
                 self.auth_jwt = self.scraper.get_auth_jwt_cookie_str()
             self.google_calendar.init()
-            timeplan = self.fetcher.get_timeplan_next_4_weeks()
-            print(timeplan)
+            print("Henter timeplan fra Visma InSchool..")
+            timeplan, start_date, end_date = self.fetcher.get_timeplan_next_x_weeks(4)
+            self.google_calendar.create_timeplan_events(timeplan, start_date, end_date)
         except Exception as e:
             raise e
